@@ -291,7 +291,18 @@ def download_file(file_path: str, destination: str) -> bool:
         return False
 
 
-def initialize_menus() -> None:
+def delete_all_commands() -> None:
     delete_commands()
+    delete_commands(scope={"type": "chat", "chat_id": ADMIN_ID})
+    delete_commands(scope={"type": "all_private_chats"})
+
+
+def initialize_menus() -> None:
+    logger.info("Nettoyage des anciennes commandes...")
+    delete_all_commands()
+    
+    logger.info("Configuration des commandes publiques...")
     set_public_commands()
+    
+    logger.info("Configuration des commandes administrateur...")
     set_admin_commands()
