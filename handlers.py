@@ -20,6 +20,7 @@ from config import (
     TOKEN,
     BASE_URL,
     is_admin_command,
+    ADMIN_ONLY_COMMANDS,
 )
 from telegram_api import (
     load_json,
@@ -30,6 +31,7 @@ from telegram_api import (
     send_photo,
     get_file,
     download_file,
+    purge_chat_commands,
 )
 from security import handle_admin_security, check_ban, log_admin_action
 from texts import (
@@ -112,6 +114,11 @@ def _handle_admin_command(
         return False
 
     try:
+        if command == "/admin":
+            lines = [f"/{c['command']} — {c['description'].replace('[ADMIN] ', '')}" for c in ADMIN_ONLY_COMMANDS]
+            send_message(chat_id, "🛠️ <b>Commandes admin</b>\n" + "\n".join(lines))
+            return True
+
         if command == "/setchannel":
             if not args:
                 send_message(chat_id, "Format : <code>/setchannel &lt;id_du_canal&gt;</code>")
@@ -287,6 +294,8 @@ def _handle_public_command(
 
     try:
         if command == "/start":
+            if chat_id != ADMIN_ID:
+                purge_chat_commands(chat_id)  # efface tout menu résiduel propre à ce chat
             if chat_id in accepted_users:
                 accepted_users.remove(chat_id)
                 save_json(USERS_FILE, accepted_users)

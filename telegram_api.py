@@ -10,6 +10,7 @@ from config import (
     PUBLIC_COMMANDS,
     ADMIN_COMMANDS,
     ADMIN_COMMAND_NAMES,
+    ADMIN_MENU_ENABLED,
     STATE_FILE,
     ORDERS_FILE,
     USERS_FILE,
@@ -216,7 +217,11 @@ def set_public_commands() -> bool:
 
 
 def set_admin_commands() -> bool:
-    """Menu complet visible UNIQUEMENT dans le chat privé de l'admin."""
+    """Menu admin : uniquement si ADMIN_MENU=1, et alors limité au chat privé de l'admin."""
+    if not ADMIN_MENU_ENABLED:
+        delete_commands({"type": "chat", "chat_id": ADMIN_ID})
+        logger.info("Menu admin désactivé : aucune commande admin dans les menus Telegram.")
+        return True
     payload: Dict[str, Any] = {
         "commands": ADMIN_COMMANDS,
         "scope": {"type": "chat", "chat_id": ADMIN_ID},
@@ -241,13 +246,37 @@ def delete_commands(scope: Optional[Dict[str, Any]] = None, language_code: Optio
     return result is not None
 
 
+def _known_chat_ids() -> List[int]:
+    """Tous les chats connus du bot (ils ont pu recevoir un menu propre dans une ancienne version)."""
+    ids = set()
+    users = load_json(USERS_FILE) if os.path.exists(USERS_FILE) else {}
+    if isinstance(users, list):
+        ids.update(u for u in users if isinstance(u, int))
+    for fname in (ORDERS_FILE,):
+        data = load_json(fname)
+        for order in data.values():
+            if isinstance(order, dict) and isinstance(order.get("user_id"), int):
+                ids.add(order["user_id"])
+    for fname in (WARNINGS_FILE, BANNED_FILE, SECURITY_STRIKES_FILE):
+        for key in load_json(fname):
+            if str(key).lstrip("-").isdigit():
+                ids.add(int(key))
+    return sorted(ids)
+
+
+def purge_chat_commands(chat_id: int) -> bool:
+    """Supprime un éventuel menu propre à un chat (il retombe alors sur le menu public)."""
+    return delete_commands({"type": "chat", "chat_id": chat_id})
+
+
 def purge_all_commands() -> None:
-    """Supprime tout menu résiduel (tous scopes publics x langues) avant reconstruction."""
+    """Supprime tout menu résiduel (scopes publics x langues, menus par chat) avant reconstruction."""
     for scope in _PURGE_SCOPES:
         for lang in _PURGE_LANGUAGES:
             delete_commands(scope, lang)
-    # Menu admin résiduel éventuel
-    delete_commands({"type": "chat", "chat_id": ADMIN_ID})
+    for chat_id in set(_known_chat_ids()) | {ADMIN_ID}:
+        for lang in _PURGE_LANGUAGES:
+            delete_commands({"type": "chat", "chat_id": chat_id}, lang)
 
 
 def get_commands(scope: Dict[str, Any], language_code: Optional[str] = None) -> Optional[List[Dict[str, Any]]]:
@@ -274,6 +303,18 @@ def verify_menus() -> bool:
                     "FUITE : commandes admin %s visibles (scope=%s, langue=%s).",
                     leaked, scope.get("type"), lang or "défaut",
                 )
+    for chat_id in _known_chat_ids():
+        if chat_id == ADMIN_ID:
+            continue
+        commands = get_commands({"type": "chat", "chat_id": chat_id})
+        if commands and any(c.get("command") in ADMIN_COMMAND_NAMES for c in commands):
+            clean = False
+            logger.critical("FUITE : menu admin visible pour le chat %s.", chat_id)
+    if not ADMIN_MENU_ENABLED:
+        commands = get_commands({"type": "chat", "chat_id": ADMIN_ID})
+        if commands and any(c.get("command") in ADMIN_COMMAND_NAMES for c in commands):
+            clean = False
+            logger.critical("FUITE : menu admin présent alors qu'il est désactivé.")
     return clean
 
 

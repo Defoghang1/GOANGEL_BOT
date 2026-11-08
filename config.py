@@ -53,6 +53,10 @@ CONFIG_FILE = "bot_config.json"
 AUDIT_LOG = "admin_audit.log"
 PROOFS_DIR = "proofs"
 
+# Par défaut AUCUNE commande admin n'apparaît dans un menu Telegram (même pour l'admin).
+# L'admin tape /admin pour obtenir la liste. ADMIN_MENU=1 réactive le menu admin (chat admin uniquement).
+ADMIN_MENU_ENABLED = _optional_env("ADMIN_MENU", "0") == "1"
+
 MAX_RUNTIME = 21420
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
 
@@ -110,7 +114,8 @@ ADMIN_ONLY_COMMANDS: List[Dict[str, str]] = [
     {"command": "false", "description": "❌ [ADMIN] Rejeter un faux paiement"},
     {"command": "block", "description": "🚫 [ADMIN] Bloquer un utilisateur"},
     {"command": "unlock", "description": "🔓 [ADMIN] Débloquer un utilisateur"},
-    {"command": "orders", "description": "📋 [ADMIN] Voir les commandes"}
+    {"command": "orders", "description": "📋 [ADMIN] Voir les commandes"},
+    {"command": "admin", "description": "🛠️ [ADMIN] Liste des commandes admin"}
 ]
 
 ADMIN_COMMAND_NAMES: frozenset = frozenset(cmd["command"] for cmd in ADMIN_ONLY_COMMANDS)
