@@ -445,12 +445,14 @@ def _handle_callback_query(
             notif_channel = _get_current_notification_channel()
             user_name = callback.get("message", {}).get("chat", {}).get("first_name", "Inconnu")
             pack_name = PACKS[orders[order_id]["pack"]]["name"]
+            pack_price = PACKS[orders[order_id]["pack"]]["price"]
             admin_notif = (
                 f"🚨 <b>COMMANDE À VÉRIFIER</b> 🚨\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
                 f"👤 <b>Client :</b> {user_name}\n"
                 f"🆔 <b>ID :</b> <code>{chat_id}</code>\n"
                 f"📦 <b>Pack :</b> {pack_name}\n"
+                f"💰 <b>Montant :</b> {pack_price}\n"
                 f"🔖 <b>Réf :</b> <code>{order_id}</code>\n"
                 f"━━━━━━━━━━━━━━━━━━━━\n"
                 f"👉 <b>Valider :</b> <code>/confirm {order_id}</code>\n"
