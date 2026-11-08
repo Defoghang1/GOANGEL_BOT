@@ -9,6 +9,7 @@ from config import (
     ADMIN_ID,
     PUBLIC_COMMANDS,
     ADMIN_COMMANDS,
+    ADMIN_COMMAND_NAMES,
     STATE_FILE,
     ORDERS_FILE,
     USERS_FILE,
@@ -181,8 +182,31 @@ def answer_callback_query(callback_query_id: str, text: Optional[str] = None, sh
     return result is not None
 
 
+_PURGE_SCOPES: List[Dict[str, Any]] = [
+    {"type": "default"},
+    {"type": "all_private_chats"},
+    {"type": "all_group_chats"},
+    {"type": "all_chat_administrators"},
+]
+
+# None = sans langue ; les menus définis avec un language_code (ex. via BotFather)
+# prennent le pas sur le menu par défaut, il faut donc les purger aussi.
+_PURGE_LANGUAGES: List[Optional[str]] = [
+    None, "fr", "en", "es", "pt", "ar", "ru", "de", "it", "tr", "zh", "hi", "id", "sw",
+]
+
+
+def _scoped_payload(scope: Dict[str, Any], language_code: Optional[str] = None) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {"scope": scope}
+    if language_code:
+        payload["language_code"] = language_code
+    return payload
+
+
 def set_public_commands() -> bool:
-    payload: Dict[str, Any] = {"commands": PUBLIC_COMMANDS}
+    """Menu visible par TOUS les utilisateurs (scope par défaut) : commandes publiques uniquement."""
+    commands = [c for c in PUBLIC_COMMANDS if c["command"] not in ADMIN_COMMAND_NAMES]
+    payload: Dict[str, Any] = {"commands": commands, "scope": {"type": "default"}}
     result = _post("setMyCommands", payload)
     if result is None:
         logger.error("Impossible de configurer les commandes publiques.")
@@ -192,24 +216,78 @@ def set_public_commands() -> bool:
 
 
 def set_admin_commands() -> bool:
+    """Menu complet visible UNIQUEMENT dans le chat privé de l'admin."""
     payload: Dict[str, Any] = {
         "commands": ADMIN_COMMANDS,
         "scope": {"type": "chat", "chat_id": ADMIN_ID},
     }
     result = _post("setMyCommands", payload)
     if result is None:
-        logger.error("Impossible de configurer les commandes admin.")
+        logger.error(
+            "Impossible de configurer les commandes admin (l'admin a-t-il déjà envoyé /start au bot ?)."
+        )
         return False
     logger.info("Commandes admin configurées avec succès pour l'ID %s.", ADMIN_ID)
     return True
 
 
-def delete_commands(scope: Optional[Dict[str, Any]] = None) -> bool:
+def delete_commands(scope: Optional[Dict[str, Any]] = None, language_code: Optional[str] = None) -> bool:
     payload: Dict[str, Any] = {}
     if scope is not None:
         payload["scope"] = scope
+    if language_code:
+        payload["language_code"] = language_code
     result = _post("deleteMyCommands", payload)
     return result is not None
+
+
+def purge_all_commands() -> None:
+    """Supprime tout menu résiduel (tous scopes publics x langues) avant reconstruction."""
+    for scope in _PURGE_SCOPES:
+        for lang in _PURGE_LANGUAGES:
+            delete_commands(scope, lang)
+    # Menu admin résiduel éventuel
+    delete_commands({"type": "chat", "chat_id": ADMIN_ID})
+
+
+def get_commands(scope: Dict[str, Any], language_code: Optional[str] = None) -> Optional[List[Dict[str, Any]]]:
+    result = _post("getMyCommands", _scoped_payload(scope, language_code))
+    if not isinstance(result, list):
+        return None
+    return result
+
+
+def verify_menus() -> bool:
+    """Retourne True si AUCUNE commande admin n'est visible hors du chat admin."""
+    clean = True
+    for scope in _PURGE_SCOPES:
+        for lang in _PURGE_LANGUAGES:
+            commands = get_commands(scope, lang)
+            if not commands:
+                continue
+            leaked = sorted(
+                c.get("command", "") for c in commands if c.get("command") in ADMIN_COMMAND_NAMES
+            )
+            if leaked:
+                clean = False
+                logger.critical(
+                    "FUITE : commandes admin %s visibles (scope=%s, langue=%s).",
+                    leaked, scope.get("type"), lang or "défaut",
+                )
+    return clean
+
+
+def initialize_menus() -> bool:
+    for attempt in (1, 2):
+        purge_all_commands()
+        set_public_commands()
+        set_admin_commands()
+        if verify_menus():
+            logger.info("Vérification des menus OK : aucune commande admin visible aux non-admins.")
+            return True
+        logger.error("Menus non conformes (tentative %s/2), nouvelle purge.", attempt)
+    logger.critical("Impossible de masquer les commandes admin aux utilisateurs.")
+    return False
 
 
 def get_updates(offset: int = 0, timeout: int = 10) -> Optional[List[Dict[str, Any]]]:
@@ -289,20 +367,3 @@ def download_file(file_path: str, destination: str) -> bool:
             except OSError:
                 pass
         return False
-
-
-def delete_all_commands() -> None:
-    delete_commands()
-    delete_commands(scope={"type": "chat", "chat_id": ADMIN_ID})
-    delete_commands(scope={"type": "all_private_chats"})
-
-
-def initialize_menus() -> None:
-    logger.info("Nettoyage des anciennes commandes...")
-    delete_all_commands()
-    
-    logger.info("Configuration des commandes publiques...")
-    set_public_commands()
-    
-    logger.info("Configuration des commandes administrateur...")
-    set_admin_commands()

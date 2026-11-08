@@ -71,7 +71,7 @@ def _parse_command(text: str) -> Tuple[str, List[str]]:
     parts = text.strip().split()
     if not parts:
         return "", []
-    command = parts[0].lower()
+    command = parts[0].lower().split("@", 1)[0]
     args = parts[1:]
     return command, args
 

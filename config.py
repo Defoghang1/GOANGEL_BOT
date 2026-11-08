@@ -100,7 +100,7 @@ PUBLIC_COMMANDS: List[Dict[str, str]] = [
     {"command": "myid", "description": "🆔 Afficher mon ID Telegram"}
 ]
 
-ADMIN_COMMANDS: List[Dict[str, str]] = PUBLIC_COMMANDS + [
+ADMIN_ONLY_COMMANDS: List[Dict[str, str]] = [
     {"command": "setchannel", "description": "📡 [ADMIN] Canal des notifications"},
     {"command": "setlien", "description": "🔧 [ADMIN] Modifier un lien"},
     {"command": "liens", "description": "🔗 [ADMIN] Voir les liens actuels"},
@@ -113,9 +113,23 @@ ADMIN_COMMANDS: List[Dict[str, str]] = PUBLIC_COMMANDS + [
     {"command": "orders", "description": "📋 [ADMIN] Voir les commandes"}
 ]
 
-_ADMIN_COMMAND_NAMES: frozenset = frozenset(
-    cmd["command"] for cmd in ADMIN_COMMANDS if cmd["command"] not in [c["command"] for c in PUBLIC_COMMANDS]
-)
+ADMIN_COMMAND_NAMES: frozenset = frozenset(cmd["command"] for cmd in ADMIN_ONLY_COMMANDS)
+_ADMIN_COMMAND_NAMES: frozenset = ADMIN_COMMAND_NAMES
+
+# Garde-fou : aucune commande admin ne doit jamais figurer dans le menu public.
+_leaked = ADMIN_COMMAND_NAMES & {cmd["command"] for cmd in PUBLIC_COMMANDS}
+if _leaked:
+    raise ConfigError(f"Commandes admin présentes dans PUBLIC_COMMANDS : {sorted(_leaked)}")
+
+ADMIN_COMMANDS: List[Dict[str, str]] = PUBLIC_COMMANDS + ADMIN_ONLY_COMMANDS
+
+
+def normalize_command(command: str) -> str:
+    """'/Confirm@MonBot' -> 'confirm'"""
+    if not isinstance(command, str):
+        return ""
+    return command.strip().lstrip("/").split("@", 1)[0].lower()
+
 
 def is_admin_command(command: str) -> bool:
-    return command.lstrip("/") in _ADMIN_COMMAND_NAMES
+    return normalize_command(command) in ADMIN_COMMAND_NAMES
