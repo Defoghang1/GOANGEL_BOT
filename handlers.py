@@ -51,6 +51,7 @@ from texts import (
     get_success_keyboard,
     get_rejected_text,
     get_links_report_text,
+    get_security_text,
 )
 
 logger = logging.getLogger(__name__)
@@ -315,6 +316,10 @@ def _handle_public_command(
             links = load_json(LINKS_FILE)
             link = links.get(pack_key, "Lien non configuré.")
             send_message(chat_id, f"✅ <b>Accès autorisé !</b>\n\nVoici votre lien de téléchargement :\n{link}")
+            return
+
+        if command == "/securite":
+            send_message(chat_id, get_security_text())
             return
 
         if command == "/support":

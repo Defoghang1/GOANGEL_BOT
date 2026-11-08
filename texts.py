@@ -1,7 +1,7 @@
 import html
 from typing import Any, Dict, List
 
-from config import PACKS
+from config import PACKS, TELEGRAM_CONTACT
 
 _MAX_TEXT_LENGTH = 4096
 
@@ -277,6 +277,35 @@ def get_rejected_text() -> str:
     )
     return _validate_text(text, "get_rejected_text")
 
+
+
+def get_security_text() -> str:
+    text = (
+        "🛡️ <b>CHARTE DE QUALITÉ & SÉCURITÉ</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Découvrez l'engagement GOANGEL pour une expérience d'analyse de haut niveau.\n\n"
+        "<b>1. 🔐 Transactions Sécurisées</b>\n"
+        "• Paiements Mobile Money vérifiés manuellement.\n"
+        "• <b>Nous ne demandons JAMAIS</b> vos codes PIN.\n\n"
+        "<b>2. 🛡️ Confidentialité Absolue</b>\n"
+        "• Aucune donnée bancaire sensible n'est collectée.\n"
+        "• Communications chiffrées par Telegram.\n\n"
+        "<b>3. 🧠 Excellence Technologique (MLOps)</b>\n"
+        "• Pipeline MLOps de pointe (XGBoost, Poisson, Dixon-Coles).\n"
+        "• Entraîné sur plus de <b>50 000 matchs</b> (Walk-Forward).\n"
+        "• Calibration de précision.\n\n"
+        "<b>4. 📜 Propriété & Licence</b>\n"
+        "• Licence d'utilisation personnelle accordée.\n"
+        "• Revente non autorisée strictement interdite.\n\n"
+        "<b>5. 📈 Vision & Performance</b>\n"
+        "• Outil d'analyse quantitative de pointe.\n"
+        "• Conçu pour maximiser vos chances grâce à la data.\n\n"
+        "<b>6. 📞 Support Dédié</b>\n"
+        f"• Assistance : {TELEGRAM_CONTACT}.\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "✅ <i>En utilisant GOANGEL, vous rejoignez l'élite de l'analyse sportive.</i>"
+    )
+    return _validate_text(text, "get_security_text")
 
 def get_links_report_text(links: Dict[str, str]) -> str:
     parts: List[str] = [
