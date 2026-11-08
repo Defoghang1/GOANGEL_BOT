@@ -143,7 +143,18 @@ def alert_unauthorized(
         f"Commande : <code>{command}</code>\n"
         f"Utilisateur : @{username} (ID: <code>{sender_id}</code>)"
     )
-    send_message(ADMIN_ID, alert_msg)
+    
+    # On récupère le canal de notification configuré
+    config = load_json(CONFIG_FILE)
+    notif_channel = config.get("notification_channel", DEFAULT_NOTIF_CHANNEL)
+    
+    # Envoi au canal prioritaire
+    sent_to_channel = send_message(notif_channel, alert_msg)
+    
+    # Si le canal échoue ou n'est pas l'admin, on sécurise en privé
+    if not sent_to_channel and str(notif_channel) != str(ADMIN_ID):
+        send_message(ADMIN_ID, alert_msg)
+        
     logger.warning(
         "Tentative non autorisée : commande=%s sender_id=%s username=%s",
         command,
