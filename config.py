@@ -55,7 +55,7 @@ PROOFS_DIR = "proofs"
 
 # Par défaut AUCUNE commande admin n'apparaît dans un menu Telegram (même pour l'admin).
 # L'admin tape /admin pour obtenir la liste. ADMIN_MENU=1 réactive le menu admin (chat admin uniquement).
-ADMIN_MENU_ENABLED = _optional_env("ADMIN_MENU", "0") == "1"
+ADMIN_MENU_ENABLED = True
 
 MAX_RUNTIME = 21420
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
