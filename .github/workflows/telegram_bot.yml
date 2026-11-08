@@ -1,0 +1,42 @@
+name: GOANGEL Telegram Bot 24/7
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' 
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360 
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Bot for 5h57
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_ID: ${{ secrets.TELEGRAM_ADMIN_ID }}
+          ORANGE_MONEY: ${{ secrets.ORANGE_MONEY }}
+          MTN_MONEY: ${{ secrets.MTN_MONEY }}
+          TELEGRAM_CONTACT: ${{ secrets.TELEGRAM_CONTACT }}
+          DEFAULT_NOTIF_CHANNEL: ${{ secrets.DEFAULT_NOTIF_CHANNEL }}
+        run: python bot.py
+
+      - name: Commit state
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "🤖 Bot state update"
+          file_pattern: "*.json proofs/ *.log"
