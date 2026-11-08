@@ -105,17 +105,17 @@ PUBLIC_COMMANDS: List[Dict[str, str]] = [
 ]
 
 ADMIN_ONLY_COMMANDS: List[Dict[str, str]] = [
-    {"command": "setchannel", "description": "📡 [ADMIN] Canal des notifications"},
-    {"command": "setlien", "description": "🔧 [ADMIN] Modifier un lien"},
-    {"command": "liens", "description": "🔗 [ADMIN] Voir les liens actuels"},
-    {"command": "preuve", "description": "📸 [ADMIN] Uploader une preuve"},
-    {"command": "delete_preuve", "description": "🗑️ [ADMIN] Supprimer la preuve"},
-    {"command": "confirm", "description": "✅ [ADMIN] Valider une commande"},
-    {"command": "false", "description": "❌ [ADMIN] Rejeter un faux paiement"},
-    {"command": "block", "description": "🚫 [ADMIN] Bloquer un utilisateur"},
-    {"command": "unlock", "description": "🔓 [ADMIN] Débloquer un utilisateur"},
-    {"command": "orders", "description": "📋 [ADMIN] Voir les commandes"},
-    {"command": "admin", "description": "🛠️ [ADMIN] Liste des commandes admin"}
+    {"command": "setchannel", "description": "📡 Canal des notifications"},
+    {"command": "setlien", "description": "🔧 Modifier un lien"},
+    {"command": "liens", "description": "🔗 Voir les liens actuels"},
+    {"command": "preuve", "description": "📸 Uploader une preuve"},
+    {"command": "delete_preuve", "description": "🗑️ Supprimer la preuve"},
+    {"command": "confirm", "description": "✅ Valider une commande"},
+    {"command": "false", "description": "❌ Rejeter un faux paiement"},
+    {"command": "block", "description": "🚫 Bloquer un utilisateur"},
+    {"command": "unlock", "description": "🔓 Débloquer un utilisateur"},
+    {"command": "orders", "description": "📋 Voir les commandes"},
+    {"command": "admin", "description": "🛠️ Liste des commandes admin"}
 ]
 
 ADMIN_COMMAND_NAMES: frozenset = frozenset(cmd["command"] for cmd in ADMIN_ONLY_COMMANDS)
